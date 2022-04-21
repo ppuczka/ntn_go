@@ -60,8 +60,11 @@ func auth(cmd *cobra.Command) {
 	}
 
 	url := "https://api.notion.com/v1/search"
+	// pageurl := "https://api.notion.com/v1/pages/2f94ff6b-8e94-42b6-8032-435a847b8a38"
+	// blockUrl := "https://api.notion.com/v1/blocks/352f3ffe-057a-4ecf-bda3-9a65e1cd99b0/children"
 
-	payload := strings.NewReader("\"page_size\":100\n\"query\":\"External tasks\",\n\"sort\":{\n\"direction\":\"ascending\",\n\"timestamp\":\"last_edited_time\"}\n")
+	payload := strings.NewReader("{\"query\":\"snippets\",\"filter\":{\"value\":\"page\",\"property\":\"object\"}}")	
+	
 	fmt.Print(payload)
 	req, _ := http.NewRequest("POST", url, payload)
 
