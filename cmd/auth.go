@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ppuczka/ntn_go/model"
 	"github.com/spf13/cobra"
 )
 
@@ -60,12 +61,12 @@ func auth(cmd *cobra.Command) {
 	}
 
 	url := "https://api.notion.com/v1/search"
+	
 	// pageurl := "https://api.notion.com/v1/pages/2f94ff6b-8e94-42b6-8032-435a847b8a38"
 	// blockUrl := "https://api.notion.com/v1/blocks/352f3ffe-057a-4ecf-bda3-9a65e1cd99b0/children"
 
-	payload := strings.NewReader("{\"query\":\"snippets\",\"filter\":{\"value\":\"page\",\"property\":\"object\"}}")	
+	payload := strings.NewReader("{\"query\":\"CLI Snippets\",\"filter\":{\"value\":\"page\",\"property\":\"object\"}}")	
 	
-	fmt.Print(payload)
 	req, _ := http.NewRequest("POST", url, payload)
 
 	req.Header.Add("Accept", "application/json")
@@ -88,7 +89,16 @@ func auth(cmd *cobra.Command) {
         log.Println("JSON parse error: ", error)
         return
     }
+	var pages model.Pages
+	var cliPage model.Page
+	json.Unmarshal(body, &pages)
+	// fmt.Println(string(prettyJSON.String()))
+	for _, p := range pages.Pages {
+		if (strings.Contains(p.Url, "CLI-Snippets")) {
+			cliPage = p
+			
+		}
+	}
+	fmt.Println(cliPage)	
 
-	fmt.Println(string(prettyJSON.String()))
-	
 }
