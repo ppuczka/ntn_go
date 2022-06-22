@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,6 +21,8 @@ import (
 
 const NOTION_API_BASE_URL = "https://api.notion.com" 
 const NOTION_API_VERSION = "2022-02-22"
+const SEARCH_URL = "https://api.notion.com/v1/search"
+const CREATE_PAGE_URL = "https://api.notion.com/v1/pages"
 
 // authCmd represents the auth command
 var authCmd = &cobra.Command{
@@ -60,21 +63,13 @@ func auth(cmd *cobra.Command) {
 		fmt.Printf("error %s", err)
 	}
 
-	url := "https://api.notion.com/v1/search"
-	
 	// pageurl := "https://api.notion.com/v1/pages/2f94ff6b-8e94-42b6-8032-435a847b8a38"
 	// blockUrl := "https://api.notion.com/v1/blocks/352f3ffe-057a-4ecf-bda3-9a65e1cd99b0/children"
 
 	payload := strings.NewReader("{\"query\":\"CLI Snippets\",\"filter\":{\"value\":\"page\",\"property\":\"object\"}}")	
-	
-	req, _ := http.NewRequest("POST", url, payload)
 
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Notion-Version", NOTION_API_VERSION)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	req.Header.Add("Content-Type", "application/json")
-
-	res, err := http.DefaultClient.Do(req)
+	req := create_notion_request("POST", SEARCH_URL, token, payload)
+	res, err := http.DefaultClient.Do(&req)
 	if err != nil {
 		fmt.Printf("Error occured: %e", err)
 	}
@@ -91,14 +86,58 @@ func auth(cmd *cobra.Command) {
     }
 	var pages model.Pages
 	var cliPage model.Page
+	
 	json.Unmarshal(body, &pages)
 	// fmt.Println(string(prettyJSON.String()))
 	for _, p := range pages.Pages {
 		if (strings.Contains(p.Url, "CLI-Snippets")) {
-			cliPage = p
-			
+		cliPage = p
+		
 		}
 	}
-	fmt.Println(cliPage)	
 
+	jsonData, _ := json.Marshal(cliPage.Children)
+
+	fmt.Println(string(jsonData))
+
+	// response := create_notion_page(cliPage.Parent.PageId, "content", token)
+	// fmt.Println(response)
 }
+	
+func create_notion_page(parentId, content, token string) (response string)  {
+	payload := strings.NewReader(`{
+		"parent": { "page_id": "4bff718c-6926-487e-abd0-39f400079a1a" },
+		"properties": {
+			"title": {
+		  "title": [{ "type": "text", "text": { "content": "A note from your pals at Notion" } }]
+			}
+		},
+		"children": [
+		{
+		  "object": "block",
+		  "type": "paragraph",
+		  "paragraph": {
+			"rich_text": [{ "type": "text", "text": { "content": "You made this page using the Notion API. Pretty cool, huh? We hope you enjoy building with us." } }]
+		  }
+		}
+	  ]
+	}`)
+
+	req := create_notion_request("POST", CREATE_PAGE_URL, token, payload)
+	res, _ := http.DefaultClient.Do(&req)
+
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	return string(body)
+}
+
+func create_notion_request(requestMethod, url, token string, body io.Reader) (request http.Request) {
+	req, _ := http.NewRequest(requestMethod, url, body) 
+
+	// req.Header.Add("Accept", "application/json")
+	req.Header.Add("Notion-Version", NOTION_API_VERSION)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Add("Content-Type", "application/json")
+	
+	return *req
+}   
