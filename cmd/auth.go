@@ -92,36 +92,21 @@ func auth(cmd *cobra.Command) {
 	for _, p := range pages.Pages {
 		if (strings.Contains(p.Url, "CLI-Snippets")) {
 		cliPage = p
-		
 		}
 	}
 
-	jsonData, _ := json.Marshal(cliPage.Children)
+	jsonData, _ := json.Marshal(cliPage)
+	notionPage := model.CreateSnippetPage(cliPage, "new title", "new text")
 
 	fmt.Println(string(jsonData))
 
-	// response := create_notion_page(cliPage.Parent.PageId, "content", token)
-	// fmt.Println(response)
+	response := create_notion_page(notionPage, token)
+	fmt.Println(response)
 }
 	
-func create_notion_page(parentId, content, token string) (response string)  {
-	payload := strings.NewReader(`{
-		"parent": { "page_id": "4bff718c-6926-487e-abd0-39f400079a1a" },
-		"properties": {
-			"title": {
-		  "title": [{ "type": "text", "text": { "content": "A note from your pals at Notion" } }]
-			}
-		},
-		"children": [
-		{
-		  "object": "block",
-		  "type": "paragraph",
-		  "paragraph": {
-			"rich_text": [{ "type": "text", "text": { "content": "You made this page using the Notion API. Pretty cool, huh? We hope you enjoy building with us." } }]
-		  }
-		}
-	  ]
-	}`)
+func create_notion_page(newPage model.Page, token string) (response string)  {
+	jsonBody, _ := json.Marshal(newPage)
+	payload := strings.NewReader(string(jsonBody))
 
 	req := create_notion_request("POST", CREATE_PAGE_URL, token, payload)
 	res, _ := http.DefaultClient.Do(&req)
