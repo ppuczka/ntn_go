@@ -19,16 +19,16 @@ import (
 var snippetCmd = &cobra.Command{
 	Use:   "snippet",
 	Short: "Creates new snippet in notion.so",
-	
+
 	Run: func(cmd *cobra.Command, args []string) {
 		snippet(cmd)
 	},
 }
 
 func init() {
-	currentTime := time.Now().Format("2017-09-07 17:06:06 Wednesday")
+	currentTime := time.Now()
+	formattedTime := currentTime.Format("Mon, 02 Jan 2006 15:04:05 MST")
 	rootCmd.AddCommand(snippetCmd)
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -37,9 +37,10 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	snippetCmd.Flags().StringP("title", "t",  currentTime, "Provide snippet title otherwise current timestamp will be added")
+	snippetCmd.Flags().StringP("title", "t", formattedTime, "Provide snippet title otherwise current timestamp will be added")
 	snippetCmd.Flags().StringP("text", "x", "", "Provide snippet content text")
 	snippetCmd.Flags().StringP("token", "o", os.Getenv("NOTION_TOKEN"), "Provide notion integrations token")
+	snippetCmd.Flags().StringP("parent", "p", "CLI Snippets", "Page containing all snippets generated form notion cli")
 	authCmd.MarkFlagRequired("title")
 	authCmd.MarkFlagRequired("text")
 }
@@ -54,76 +55,98 @@ func snippet(cmd *cobra.Command) {
 	if err != nil {
 		fmt.Printf("error %s", err)
 	}
-	
+
 	pageText, err := cmd.Flags().GetString("text")
 	if err != nil {
 		fmt.Printf("error %s", err)
 	}
 
+	// parent, err := cmd.Flags().GetString("parent")
+	// if err != nil {
+	// 	fmt.Printf("error %s", err)
+	// }
+
 	parentPage := search_notion_page(token)
-	notionPage := model.CreateSnippetPage(parentPage, pageTitle, pageText)
 	
-	response := create_notion_page(notionPage, token)
+	list_all_snippets(parentPage.Id, token)
+	// fmt.Println(parentPage)
+
+	notionPage := model.CreateSnippetPageModel(parentPage, pageTitle, pageText)
+
+	response := create_snippet_page(notionPage, token)
 	fmt.Println(response)
 }
 
-func search_notion_page(token string)(model.Page) {
-	payload := strings.NewReader("{\"query\":\"CLI Snippets\",\"filter\":{\"value\":\"page\",\"property\":\"object\"}}")	
-	
-	req := create_notion_request("POST", SEARCH_URL, token, payload)
+func search_notion_page(token string) model.Page {
+	// Create model for search
+	payload := strings.NewReader("{\"query\":\"CLI Snippets\",\"filter\":{\"value\":\"page\",\"property\":\"object\"}}")
+
+	req := create_notion_request("POST", NOTION_SEARCH_URL, token, payload)
 	res, err := http.DefaultClient.Do(&req)
-	
+
 	if err != nil {
 		fmt.Printf("Error occured: %e", err)
 	}
 
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	
+
 	var prettyJSON bytes.Buffer
-    error := json.Indent(&prettyJSON, body, "", "\t")
-    if error != nil {
-        log.Println("JSON parse error: ", error)
-        return model.Page{}
-    }
+	error := json.Indent(&prettyJSON, body, "", "\t")
+	if error != nil {
+		log.Println("JSON parse error: ", error)
+		return model.Page{}
+	}
 
 	var pages model.Pages
 	var cliPage model.Page
-	
+	// fmt.Println(string(body))
 	json.Unmarshal(body, &pages)
-	// fmt.Println(string(prettyJSON.String()))
 	for _, p := range pages.Pages {
-		if (strings.Contains(p.Url, "CLI-Snippets")) {
-		cliPage = p
+		if strings.Contains(p.Url, "CLI-Snippets") {
+			cliPage = p
 		}
 	}
 	return cliPage
 
 }
-	
-func create_notion_page(newPage model.Page, token string) (response string)  {
+
+func create_snippet_page(newPage model.Page, token string) (response string) {
 	jsonBody, _ := json.Marshal(newPage)
 	payload := strings.NewReader(string(jsonBody))
 
-	req := create_notion_request("POST", CREATE_PAGE_URL, token, payload)
+	req := create_notion_request("POST", NOTION_PAGE_URL, token, payload)
 	res, err := http.DefaultClient.Do(&req)
-	if (err != nil) {
+	if err != nil {
 		log.Fatal("Error while sending request to notion")
 	}
 	defer res.Body.Close()
-	
+
 	body, _ := ioutil.ReadAll(res.Body)
 	return string(body)
 }
 
+func list_all_snippets(pageId, token string) {
+	url := fmt.Sprintf("%s/%s/children", NOTION_BLOCK_URL, pageId)
+	req := create_notion_request("GET", url, token, nil)
+	res, err := http.DefaultClient.Do(&req)
+	if err != nil {
+		log.Fatal("Error while sending request to notion")
+	}
+	defer res.Body.Close()
+
+	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Println(string(body))
+}
+
 func create_notion_request(requestMethod, url, token string, body io.Reader) (request http.Request) {
-	req, _ := http.NewRequest(requestMethod, url, body) 
+	req, _ := http.NewRequest(requestMethod, url, body)
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Notion-Version", NOTION_API_VERSION)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Add("Content-Type", "application/json")
-	
+
 	return *req
-}   
+}
 

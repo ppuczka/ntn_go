@@ -10,16 +10,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const NOTION_API_BASE_URL = "https://api.notion.com" 
+const NOTION_API_BASE_URL = "https://api.notion.com"
 const NOTION_API_VERSION = "2022-02-22"
-const SEARCH_URL = "https://api.notion.com/v1/search"
-const CREATE_PAGE_URL = "https://api.notion.com/v1/pages"
+const NOTION_SEARCH_URL = "https://api.notion.com/v1/search"
+const NOTION_PAGE_URL = "https://api.notion.com/v1/pages"
+const NOTION_BLOCK_URL = "https://api.notion.com/v1/blocks"
 
 // authCmd represents the auth command
 var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "Authorize tool in notion.so ",
-	
+
 	Run: func(cmd *cobra.Command, args []string) {
 		auth(cmd)
 	},
