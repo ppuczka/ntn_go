@@ -1,6 +1,5 @@
 package model
 
-import "fmt"
 
 
 type Pages struct {

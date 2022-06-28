@@ -14,6 +14,7 @@ import (
 
 	"github.com/ppuczka/ntn_go/model"
 	"github.com/spf13/cobra"
+	"github.com/ledongthuc/goterators"
 )
 
 var snippetCmd = &cobra.Command{
@@ -52,20 +53,20 @@ func snippet(cmd *cobra.Command) {
 		fmt.Printf("error %s", err)
 	}
 
-	pageTitle, err := cmd.Flags().GetString("title")
-	if err != nil {
-		fmt.Printf("error %s", err)
-	}
+	// pageTitle, err := cmd.Flags().GetString("title")
+	// if err != nil {
+	// 	fmt.Printf("error %s", err)
+	// }
 
-	pageText, err := cmd.Flags().GetString("text")
-	if err != nil {
-		fmt.Printf("error %s", err)
-	}
+	// pageText, err := cmd.Flags().GetString("text")
+	// if err != nil {
+	// 	fmt.Printf("error %s", err)
+	// }
 	
-	snippetCaption, err := cmd.Flags().GetString("caption")
-	if err != nil {
-		fmt.Printf("error %s", err)
-	}
+	// snippetCaption, err := cmd.Flags().GetString("caption")
+	// if err != nil {
+	// 	fmt.Printf("error %s", err)
+	// }
 
 	// parent, err := cmd.Flags().GetString("parent")
 	// if err != nil {
@@ -77,10 +78,10 @@ func snippet(cmd *cobra.Command) {
 	listAllSnippets(parentPage.Id, token)
 	// fmt.Println(parentPage)
 
-	notionPage := model.CreateSnippetPageModel(parentPage, pageTitle, pageText, snippetCaption)
+	// notionPage := model.CreateSnippetPageModel(parentPage, pageTitle, pageText, snippetCaption)
 
-	response := createSnippetPage(notionPage, token)
-	fmt.Println(response)
+	// response := createSnippetPage(notionPage, token)
+	// fmt.Println(response)
 }
 
 func searchNotionPage(token string) model.Page {
@@ -95,6 +96,7 @@ func searchNotionPage(token string) model.Page {
 	}
 
 	defer res.Body.Close()
+	fmt.Printf("Response is: %d", res.StatusCode)
 	body, _ := ioutil.ReadAll(res.Body)
 
 	var prettyJSON bytes.Buffer
@@ -141,8 +143,20 @@ func listAllSnippets(pageId, token string) {
 	}
 	defer res.Body.Close()
 
-	// body, _ := ioutil.ReadAll(res.Body)
-	// fmt.Println(string(body))
+	body, _ := ioutil.ReadAll(res.Body)
+	var snippets model.Pages
+	json.Unmarshal(body, &snippets)
+	code := goterators.Map(snippets.Pages, func(snippet model.Page) []model.Code {
+		snippetList := make([]model.Code, 0)
+		for _, child := range snippet.Children {
+			fmt.Printf("Hello %s", child.Code.Caption)
+			snippetList = append(snippetList, child.Code)
+		}
+		return snippetList
+	})
+	for _, c := range code {
+		fmt.Printf("%s", c)
+	}
 }
 
 func createNotionRequest(requestMethod, url, token string, body io.Reader) (request http.Request) {

@@ -3,9 +3,12 @@ module github.com/ppuczka/ntn_go
 go 1.18
 
 require (
-	github.com/m7shapan/njson v1.0.7
+	github.com/ledongthuc/goterators v1.0.2
 	github.com/spf13/cobra v1.4.0
-	github.com/spf13/viper v1.11.0 // indirect
-	github.com/tidwall/gjson v1.14.1 // indirect
-	golang.org/x/text v0.3.7
+)
+
+require (
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
+	golang.org/x/exp v0.0.0-20220314205449-43aec2f8a4e7 // indirect
 )
