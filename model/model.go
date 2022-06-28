@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 
 type Pages struct {
 	Pages []Page `json:"results"` 
@@ -13,16 +15,20 @@ type Page struct {
 	Children		[]PageChildren `json:"children"`    
 }
 
-func CreateSnippetPageModel(parentPage Page, newSnippetTitle, newSnippetText string) (snippetPage Page) {
+func CreateSnippetPageModel(parentPage Page, newSnippetTitle, newSnippetText, newSnippetCaption string) (snippetPage Page) {
 	snippetTitle := Text{newSnippetTitle, ""}
 	innerTitle := InnerTitle{"text", snippetTitle, "innerText"}
 	pageTitle := Title{"id", "title", []InnerTitle{innerTitle}}
 	properties := PageProperties {pageTitle}
 
-	richTextContent := Text{newSnippetText, ""}
-	richText := RichText{"text", richTextContent}
-	paragraph := Paragraph{[]RichText {richText}}
-	child := PageChildren{"block", "paragraph", paragraph}
+	snippetContent := Text{newSnippetText, ""}
+	snippetCaptionText := Text{newSnippetCaption, ""}
+	snippetRichText := RichText{"text", snippetContent}
+	snippetCaption := RichText{"text", snippetCaptionText}
+	
+	// paragraph := Paragraph{[]RichText {snippetRichText}}
+	codeType := Code{[]RichText {snippetRichText}, []RichText {snippetCaption}, "bash"}
+	child := PageChildren{"block", "code", codeType}
 
 	children := []PageChildren{child}
 	parent := Parent{"page_id", parentPage.Id}
@@ -58,7 +64,8 @@ type Text struct {
 type PageChildren struct {
 	Object    string    `json:"object"`
 	Type      string    `json:"type"`
-	Paragraph Paragraph `json:"paragraph"`
+	// Paragraph Paragraph `json:"paragraph,omitempty"`
+	Code      Code      `json:"code"`
 }
 type Paragraph struct {
 	RichText []RichText `json:"rich_text"`
@@ -66,4 +73,10 @@ type Paragraph struct {
 type RichText struct {
 	Type     string `json:"type"`
 	Text     Text   `json:"text"`
+}
+
+type Code struct {
+	RichText  []RichText `json:"rich_text"`
+	Caption   []RichText `json:"caption"`
+	Language  string     `json:"language"`
 }

@@ -7,4 +7,5 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0 // indirect
 	github.com/tidwall/gjson v1.14.1 // indirect
+	golang.org/x/text v0.3.7
 )
