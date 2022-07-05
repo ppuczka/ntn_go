@@ -9,9 +9,12 @@ type Pages struct {
 type Page struct {
 	Url             string 		   `json:"url,omitempty"`
 	Id              string 		   `json:"id,omitempty"`
+	// Type            string         `json:"type"`
     Parent          Parent 		   `json:"parent"`
 	Properties    	PageProperties `json:"properties"`
-	Children		[]PageChildren `json:"children"`    
+	Children		[]PageChildren `json:"children"`   
+	// ChildPage       ChildPage      `json:"child_page,omitempty"`
+	// Code            Code           `json:"code,omitempty"` 
 }
 
 func CreateSnippetPageModel(parentPage Page, newSnippetTitle, newSnippetText, newSnippetCaption string) (snippetPage Page) {
@@ -78,4 +81,8 @@ type Code struct {
 	RichText  []RichText `json:"rich_text"`
 	Caption   []RichText `json:"caption"`
 	Language  string     `json:"language"`
+}
+
+type ChildPage struct {
+	Title     string `json:"title"`
 }
